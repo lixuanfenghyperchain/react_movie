@@ -34,13 +34,6 @@ public class UserDaoImpl implements UserDao {
     @Autowired
     private IBaseDao baseDao;  //这个是系统自带的
 
-    @Override
-    public Map getUserById(Integer id) throws SQLException {
-        String sql = "SELECT * FROM `user` WHERE id=1";
-        return baseDao.getMap(sql);
-
-
-    }
 
     @Override
     public List<WMap> getUserList() throws SQLException {
@@ -82,5 +75,23 @@ public class UserDaoImpl implements UserDao {
         ps.addString(userName);
         WMap map = baseDao.getMap(sql, ps);
         return map;
+    }
+
+
+    public WMap getUserInfoById(String key) throws SQLException {
+        String sql = "select `key`,name as userName ,age,address,mail,cellPhone,avatar_url,user_des from user where `key`=? ";
+        Ps ps = new Ps();
+        ps.addString(key);
+        WMap map = baseDao.getMap(sql, ps);
+        return map;
+    }
+
+    @Override
+    public void updateUserAvatar(Integer key, String avatarUrl) throws SQLException {
+        String sql = "update user set avatar_url=? where `key`=?";
+        Ps ps = new Ps();
+        ps.addString(avatarUrl);
+        ps.addInt(key);
+        baseDao.update(sql, ps);
     }
 }

@@ -80,8 +80,9 @@ public class UserController {
     }
 
     @RequestMapping(value = "/getUserInfoById", method = RequestMethod.GET)
-    public Map getUserInfoById(String id) throws SQLException {
-        return userDao.getUserById(Integer.valueOf(id));
+    public BaseResult getUserInfoById(String key) throws SQLException {
+        WMap userInfoById = userDao.getUserInfoById(key);
+        return BaseResult.response(Code.RETURN_SUCCESS, userInfoById);
     }
 
     @RequestMapping(value = "/getUsers", method = RequestMethod.GET)
@@ -97,5 +98,10 @@ public class UserController {
         return BaseResult.response(Code.RETURN_SUCCESS);
     }
 
-
+    //更新用户头像
+    @RequestMapping(value = "/updateUserAvatar", method = RequestMethod.GET)
+    public BaseResult updateUserAvatar(String key, String avatarUrl) throws SQLException {
+        userDao.updateUserAvatar(Integer.valueOf(key), avatarUrl);
+        return BaseResult.response(Code.RETURN_SUCCESS);
+    }
 }

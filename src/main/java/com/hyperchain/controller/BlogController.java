@@ -57,11 +57,11 @@ public class BlogController {
     }
 
     @GetMapping(value = "/addBlogComment")
-    public BaseResult addBlogComment(String id, String comment) throws SQLException {
+    public BaseResult addBlogComment(String id, String comment, int userId, String userName) throws SQLException {
         if ("".equals(comment.trim())) {
             return BaseResult.response("000001", "评论内容不能为空", "");
         }
-        blogDao.addBlogComment(id, comment);
+        blogDao.addBlogComment(id, comment,userId,userName);
         return BaseResult.response(Code.RETURN_SUCCESS);
 
     }
@@ -81,6 +81,12 @@ public class BlogController {
 
     @GetMapping(value = "/clickStar")
     public BaseResult clickStar(String userId, String blogId, boolean clickOrCancle) throws SQLException {
+
+        if (null == userId || "".equals(userId.trim())) {
+            return BaseResult.response("000004", "请先登陆", "");
+        }
+
+
         if (!clickOrCancle) {
             //当为false时 进行点赞
             blogDao.clickStar(userId, blogId);

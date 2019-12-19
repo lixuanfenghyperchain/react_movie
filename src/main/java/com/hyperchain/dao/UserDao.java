@@ -26,7 +26,6 @@ import java.util.Map;
  * @since 1.0.0
  */
 public interface UserDao {
-    Map getUserById(Integer id) throws SQLException;
 
     public List<WMap> getUserList() throws SQLException;
 
@@ -37,4 +36,8 @@ public interface UserDao {
     public int delete(Integer id) throws SQLException;
 
     WMap findUserByUserName(String userName) throws SQLException;
+
+    WMap getUserInfoById(String key) throws SQLException;
+
+    void updateUserAvatar(Integer key, String avatarUrl) throws SQLException;
 }

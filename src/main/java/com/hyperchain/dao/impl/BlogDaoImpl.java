@@ -39,7 +39,7 @@ public class BlogDaoImpl implements BlogDao {
     @Override
     @Transactional
     public long add(Map blog) throws SQLException {
-        String sql = "insert into t_blog_article (title,summary,create_time,type,images_url) values  (?,?,?,?,?)";
+        String sql = "insert into t_blog_article (title,summary,create_time,type,images_url,create_user_id) values  (?,?,?,?,?,?)";
         Ps ps = new Ps();
         ps.addString((String) blog.get("name"));
         ps.addString((String) blog.get("desc"));
@@ -47,6 +47,7 @@ public class BlogDaoImpl implements BlogDao {
         ps.addString((String) blog.get("types"));
         List imgsUrl = (List) blog.get("imgs");
         ps.addString(imgsUrl.get(0).toString());
+        ps.addInt(Integer.valueOf((String) blog.get("create_user_id")));
         //返回插入博客标题的主键
         long article_id = baseDao.insertReturnId(sql, ps);
         String sql1 = "insert into t_blog_content (article_id,article_content) values (?,?)";
@@ -59,7 +60,8 @@ public class BlogDaoImpl implements BlogDao {
 
     @Override
     public List<WMap> getBlogs() throws SQLException {
-        String sql = "select id,star_num,title,summary as des ,create_time as time,type,images_url as url from t_blog_article  order by create_time desc ";
+//        String sql = "select id,star_num,title,summary as des ,create_time as time,type,images_url as url from t_blog_article  order by create_time desc ";
+        String sql = "select id,star_num,title,summary as des ,b.create_time as time,type,images_url as url ,user.avatar_url from t_blog_article  b , user WHERE user.key=b.create_user_id  order by b.create_time desc";
         return baseDao.getMapList(sql);
     }
 
@@ -72,19 +74,22 @@ public class BlogDaoImpl implements BlogDao {
     }
 
     @Override
-    public void addBlogComment(String id, String content) throws SQLException {
-        String sql = "insert into t_blog_comment (com_blog_id,com_content,com_time) values (?,?,?)";
+    public void addBlogComment(String id, String content, int userId, String userName) throws SQLException {
+        String sql = "insert into t_blog_comment (com_blog_id,com_content,com_time,com_person_id,com_person_name) values (?,?,?,?,?)";
         Long com_time = new Date().getTime();
         Ps ps = new Ps();
         ps.addInt(Integer.valueOf(id));
         ps.addString(content);
         ps.addString(com_time.toString());
+        ps.addInt(userId);
+        ps.addString(userName);
         baseDao.save(sql, ps);
     }
 
     @Override
     public List<WMap> getBlogComments(String id) throws SQLException {
-        String sql = "select id,com_content,com_time from t_blog_comment where com_blog_id=? order by com_time desc";
+//        String sql = "select id,com_content,com_time ,com_person_name,com_person_id from t_blog_comment where com_blog_id=? order by com_time desc";
+        String sql = "select id,com_content,com_time ,com_person_name,com_person_id , `user`.avatar_url from t_blog_comment ,`user` where `key`=com_person_id and com_blog_id=? order by com_time desc";
         Ps ps = new Ps();
         ps.addInt(Integer.valueOf(id));
         return baseDao.getMapList(sql, ps);

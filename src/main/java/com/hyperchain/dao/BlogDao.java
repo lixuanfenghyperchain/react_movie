@@ -31,7 +31,7 @@ public interface BlogDao {
 
     WMap getBlogDetailById(String id);
 
-    void addBlogComment(String id, String content) throws SQLException;
+    void addBlogComment(String id, String content, int userId, String userName) throws SQLException;
 
     List<WMap> getBlogComments(String id) throws SQLException;
 
