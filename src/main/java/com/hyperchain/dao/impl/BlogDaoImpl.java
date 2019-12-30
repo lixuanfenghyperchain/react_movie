@@ -14,6 +14,7 @@ import com.hyperchain.base.Ps;
 import com.hyperchain.base.WMap;
 import com.hyperchain.base.dao.IBaseDao;
 import com.hyperchain.dao.BlogDao;
+import com.vdurmont.emoji.EmojiParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,7 @@ public class BlogDaoImpl implements BlogDao {
         String sql1 = "insert into t_blog_content (article_id,article_content) values (?,?)";
         Ps ps1 = new Ps();
         ps1.addInt((int) article_id);
-        ps1.addString((String) blog.get("detail"));
+        ps1.addString(EmojiParser.removeAllEmojis((String) blog.get("detail")));
         baseDao.save(sql1, ps1);
         return article_id;
     }
@@ -61,19 +62,45 @@ public class BlogDaoImpl implements BlogDao {
     @Override
     public List<WMap> getBlogs() throws SQLException {
 //        String sql = "select id,star_num,title,summary as des ,create_time as time,type,images_url as url from t_blog_article  order by create_time desc ";
-        String sql = "select id,star_num,title,summary as des ,b.create_time as time,type,images_url as url ,user.avatar_url from t_blog_article  b , user WHERE user.key=b.create_user_id  order by b.create_time desc";
+        String sql = "select id,star_num,title,summary as des ,b.create_time as time," +
+                "   type,images_url as url ,user.avatar_url,b.create_user_id ,comment_num,read_num  " +
+                "   from t_blog_article  b , user WHERE user.key=b.create_user_id  order by b.create_time desc";
         return baseDao.getMapList(sql);
     }
 
     @Override
-    public WMap getBlogDetailById(String id) {
-        String sql = "select a.id,title,summary as des ,star_num,create_time as time,type, article_content as content from t_blog_article a ,t_blog_content c where a.id=c.article_id and a.id=?";
+    public List<WMap> getTop10Blogs() throws SQLException {
+        String sql = "select id,user.key as userKey,star_num,title,summary as des ,b.create_time as time," +
+                "   type,images_url as url ,user.avatar_url,b.create_user_id ,user.name,comment_num,read_num  " +
+                "   from t_blog_article  b , user WHERE user.key=b.create_user_id  order by read_num desc  LIMIT 10;";
+        return baseDao.getMapList(sql);
+    }
+
+    @Override
+    public List<WMap> getUserBlogsById(String userId) throws SQLException {
+        String sql = "select id,title,summary as des ,b.create_time as time,read_num,star_num,comment_num  " +
+                "   from t_blog_article  b  where b.create_user_id=?  order by b.create_time desc";
+        Ps ps = new Ps();
+        ps.addInt(Integer.valueOf(userId));
+        return baseDao.getMapList(sql, ps);
+    }
+
+    @Override
+    public WMap getBlogDetailById(String id) throws SQLException {
+        //查看一次 更新阅读量
+        String sql1 = "update t_blog_article set read_num=read_num+1 where id=?";
+        Ps ps1 = new Ps();
+        ps1.addInt(Integer.valueOf(id));
+        baseDao.update(sql1, ps1);
+        //查看详情
+        String sql = "select a.id,title,summary as des ,star_num,read_num,create_time as time,type, article_content as content from t_blog_article a ,t_blog_content c where a.id=c.article_id and a.id=?";
         Ps ps = new Ps();
         ps.addInt(Integer.valueOf(id));
         return baseDao.getMap(sql, ps);
     }
 
     @Override
+    @Transactional
     public void addBlogComment(String id, String content, int userId, String userName) throws SQLException {
         String sql = "insert into t_blog_comment (com_blog_id,com_content,com_time,com_person_id,com_person_name) values (?,?,?,?,?)";
         Long com_time = new Date().getTime();
@@ -83,7 +110,12 @@ public class BlogDaoImpl implements BlogDao {
         ps.addString(com_time.toString());
         ps.addInt(userId);
         ps.addString(userName);
+        //更新博客表中的评论数量
+        String sql1 = "update t_blog_article set comment_num=comment_num+1 where id=?";
+        Ps ps1 = new Ps();
+        ps1.addInt(Integer.valueOf(id));
         baseDao.save(sql, ps);
+        baseDao.update(sql1, ps1);
     }
 
     @Override
@@ -130,6 +162,59 @@ public class BlogDaoImpl implements BlogDao {
         Ps ps1 = new Ps();
         ps1.addInt(Integer.valueOf(blogId));
         baseDao.save(sql1, ps1);
+    }
+
+    @Override
+    @Transactional
+    public void collectBlog(String userId, String blogId, String collectFileId, String collectFileName) throws SQLException {
+        String sql = "insert into t_blog_collect (user_id,blog_id,file_id,file_name) values (?,?,?,?)";
+        Ps ps = new Ps();
+        ps.addInt(Integer.valueOf(userId));
+        ps.addInt(Integer.valueOf(blogId));
+        ps.addInt(Integer.valueOf(collectFileId));
+        ps.addString(collectFileName);
+        baseDao.save(sql, ps);
+        //更新收藏夹表，
+        String sql1 = "update t_blog_collect_file set blog_num=blog_num+1 where id=?";
+        Ps ps1 = new Ps();
+        ps1.addInt(Integer.valueOf(collectFileId));
+        baseDao.save(sql1, ps1);
+    }
+
+
+    @Override
+    @Transactional
+    public void cancelCollectBlog(String userId, String blogId, String collectFileId) throws SQLException {
+        String sql = "delete  from  t_blog_collect where user_id=? and blog_id=? and file_id=?  ";
+        Ps ps = new Ps();
+        ps.addInt(Integer.valueOf(userId));
+        ps.addInt(Integer.valueOf(blogId));
+        ps.addInt(Integer.valueOf(collectFileId));
+        baseDao.delete(sql, ps);
+        //更新收藏夹表，
+        String sql1 = "update t_blog_collect_file set blog_num=blog_num-1 where id=?";
+        Ps ps1 = new Ps();
+        ps1.addInt(Integer.valueOf(collectFileId));
+        baseDao.update(sql1, ps1);
+    }
+
+    @Override
+    public List<WMap> getCollectedBlogs(String userId, String fileType) throws SQLException {
+//        String sql = "select id,title,star_num,summary as des from t_blog_article  WHERE id in (select blog_id FROM t_blog_collect where user_id=?) order by create_time desc";
+        String sql = "select id,title,star_num,summary  as des ,user.avatar_url  from t_blog_article b ,`user` WHERE b.create_user_id=user.key  " +
+                "   and b.id in(select DISTINCT blog_id FROM t_blog_collect where user_id=? and file_id=?)  order by b.create_time desc";
+        Ps ps = new Ps();
+        ps.addInt(Integer.valueOf(userId));
+        ps.addInt(Integer.valueOf(fileType));
+        return baseDao.getMapList(sql, ps);
+    }
+
+    @Override
+    public List<WMap> fuzzySearchBlogs(String name) throws SQLException {
+        String sql = "select id,star_num,title,summary as des ,b.create_time as time," +
+                "   type,images_url as url ,user.avatar_url,b.create_user_id ,comment_num,read_num  " +
+                "   from t_blog_article  b , user WHERE user.key=b.create_user_id and title like '%" + name + "%' order by b.create_time desc ";
+        return baseDao.getMapList(sql);
     }
 
 }

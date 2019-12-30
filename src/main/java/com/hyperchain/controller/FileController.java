@@ -39,8 +39,8 @@ import java.util.UUID;
 public class FileController {
     @Value("${file.upload.location}")
     private String uploadPath;
-
-    private String PIC_ACCESS_URL = "http://127.0.0.1:8080/data/";
+    @Value("${PIC_ACCESS_URL}")
+    private String PIC_ACCESS_URL;
 
 
     @PostMapping(value = "/upload")

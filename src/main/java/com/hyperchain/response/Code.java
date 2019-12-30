@@ -4,8 +4,11 @@ public enum Code {
 
     RETURN_SUCCESS("1", "成功"),
 
-    RETURN_FALSE("0", "失败");
+    RETURN_FALSE("0", "失败"),
 
+    USER_EXIT("000001", "用户已存在"),
+    PASSWORD_NOT_EQUAL("000002", "密码不一致"),
+    PASSWORD_ERROR("000003", "密码不正确");
     private String code;
     private String msg;
 

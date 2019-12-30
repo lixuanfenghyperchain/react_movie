@@ -39,7 +39,6 @@ public class GlobalExceptionAdvice {
     private static final String logExceptionFormat = "Capture Exception By GlobalExceptionHandler: Code: %s Detail: %s";
 
 
-
     //运行时异常
     @ExceptionHandler(SQLException.class)
     public String sqlExceptionHandler(SQLException ex) {
@@ -146,7 +145,7 @@ public class GlobalExceptionAdvice {
     private <T extends Throwable> String resultFormat(Integer code, T ex) {
         ex.printStackTrace();
         log.error(String.format(logExceptionFormat, code, ex.getMessage()));
-        return JsonResult.failed(code, ex.getMessage());
+        return JsonResult.failed(code, "系统异常");
     }
 
 }

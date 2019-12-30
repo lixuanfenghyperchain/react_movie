@@ -29,7 +29,11 @@ public interface BlogDao {
 
     public List<WMap> getBlogs() throws SQLException;
 
-    WMap getBlogDetailById(String id);
+    List<WMap> getTop10Blogs() throws SQLException;
+
+    List<WMap> getUserBlogsById(String userId) throws SQLException;
+
+    WMap getBlogDetailById(String id) throws SQLException;
 
     void addBlogComment(String id, String content, int userId, String userName) throws SQLException;
 
@@ -40,4 +44,15 @@ public interface BlogDao {
     WMap isClickStar(String userId, String blogId);
 
     void cancleStar(String userId, String blogId) throws SQLException;
+
+    void collectBlog(String userId, String blogId, String collectFileId, String collectFileName) throws SQLException;
+
+    void cancelCollectBlog(String key, String blogId, String collectFileId) throws SQLException;
+
+    List<WMap> getCollectedBlogs(String userId, String fileType) throws SQLException;
+
+
+    List<WMap> fuzzySearchBlogs(String name) throws SQLException;
+
+
 }
